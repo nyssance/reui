@@ -1,6 +1,6 @@
 {
   "name": "@nyssance/reui",
-  "version": "0.1.0",
+  "version": "2.8.1",
   "description": "MIT ReUI Base UI Vega primitives, packaged as ESM with TypeScript declarations.",
   "type": "module",
   "license": "MIT",
@@ -60,5 +60,9 @@
     "react-day-picker": "^10.0.2",
     "react-phone-number-input": "^3.4.18",
     "shiki": "^4.6.0"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
   }
 }

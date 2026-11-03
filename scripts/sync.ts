@@ -49,7 +49,7 @@ try {
   if (dependencies["@tanstack/react-virtual"]) dependencies["@tanstack/react-virtual"] = ">=3.14.25 <3.14.26"
   manifest.dependencies = Object.fromEntries(Object.entries(dependencies).sort(([a], [b]) => a.localeCompare(b)))
   writeFileSync(join(pkg, "package.json"), JSON.stringify(manifest, null, 2) + "\n")
-  writeFileSync(join(pkg, "registry.json"), JSON.stringify({ registry: "https://reui.io/r/{style}/{name}.json", style: "base-vega", cli: "shadcn@4.23.0", items: names, files: Object.fromEntries(files.map(f => [relative(join(scratch, "src"), f).split(sep).join("/"), createHash("sha256").update(readFileSync(f)).digest("hex")])) }, null, 2) + "\n")
+  writeFileSync(join(pkg, "registry.json"), JSON.stringify({ upstreamVersion: manifest.version, versionSource: "https://github.com/keenthemes/reui/blob/main/package.json", registry: "https://reui.io/r/{style}/{name}.json", style: "base-vega", cli: "shadcn@4.23.0", items: names, files: Object.fromEntries(files.map(f => [relative(join(scratch, "src"), f).split(sep).join("/"), createHash("sha256").update(readFileSync(f)).digest("hex")])) }, null, 2) + "\n")
   console.log(`Synced ${names.length} registry entries, ${files.length} source files.`)
 } finally {
   if (supplied < 0) rmSync(scratch, { recursive: true, force: true })

@@ -169,5 +169,7 @@
     "components/reui/data-grid/data-grid-table-virtual.tsx": "89b56b543950a3ed29c464a9ff357d92ae2b3e2d5067dd461f05ee5bf21a1223",
     "components/reui/data-grid/data-grid.tsx": "d13f3385332d245871dd97a8abda3e6c27f439989eefd20d880e217cae0e01f9",
     "components/reui/sortable.tsx": "9ef56f725faa689f3c03f4e4acee2ef851363cee803cc9724e15e793e4a56a9c"
-  }
+  },
+  "upstreamVersion": "2.8.1",
+  "versionSource": "https://github.com/keenthemes/reui/blob/main/package.json"
 }

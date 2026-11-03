@@ -56,6 +56,10 @@ The allowlist is `registry-items.json`: 82 public registry entries including sub
 
 Packaging: MIT, copyright nyssance. ReUI sources: MIT, copyright Keenthemes Inc; see `REUI-LICENSE` and `THIRD_PARTY_NOTICES.md`. `registry.json` records file hashes and source registry; installed sources are retained for review. This project is not affiliated with Keenthemes.
 
+## Versioning
+
+The package version follows the current upstream ReUI `package.json` version (2.8.1 for this registry snapshot), not the older Git tags or the shadcn CLI version. This remains an unofficial Base UI Vega registry package.
+
 ## Development
 
 Requires Bun 1.4 and Node-compatible tooling, React 19, Vite 8 for the optional plugin.
@@ -82,4 +86,4 @@ The current `@tanstack/react-virtual` 3.14.26 manifest refers to unpublished `@t
 
 ### Validation status
 
-Local macOS validation: all 82 source modules import successfully; declarations compile; Vite builds an isolated tarball consumer; SSR and registry alias resolution pass. Windows drive-letter, UNC, Unicode and space-containing paths are covered by path regression tests. A native Windows build has not yet been run. No remote push, CI run or npm publication has been performed.
+Local macOS validation: all 82 source modules import successfully; declarations compile; Vite builds an isolated tarball consumer; SSR and registry alias resolution pass. Windows drive-letter, UNC, Unicode and space-containing paths are covered by path regression tests. A native Windows build has not yet been run. Releases are published locally; no CI is required.

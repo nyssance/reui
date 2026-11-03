@@ -1,0 +1,25 @@
+{
+  "name": "nyssance-reui",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
+  "packageManager": "bun@1.4.4",
+  "scripts": {
+    "sync": "bun scripts/sync.ts",
+    "build": "bun scripts/build.ts",
+    "typecheck": "bun scripts/build.ts --check",
+    "test": "bun test",
+    "verify:package": "bun scripts/verify-package.ts"
+  },
+  "devDependencies": {
+    "@nyssance/reui": "workspace:*",
+    "@types/bun": "^1.4.4",
+    "@types/node": "^24",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.5"
+  }
+}

@@ -78,7 +78,7 @@ bun pm pack
 
 Windows paths use native filesystem operations and forward slashes only for ESM module specifiers. The Vite resolver reuses `@nyssance/shadcn` >=4.23.4's fix for duplicate module identity on Windows and preserves `?url`, `?react` and `?worker`. No shell globbing, POSIX copy commands or raw filesystem paths in dynamic imports are required by the build.
 
-No CI or automatic publishing is configured. Publish and push are explicit manual release steps after local validation.
+CI verifies every push. Releases: bump `packages/reui/package.json`, push tag `v<version>`; CI publishes with npm trusted publishing (workflow `publish.yml`, environment `npm`).
 
 ### Known upstream dependency issue
 

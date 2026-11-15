@@ -80,10 +80,6 @@ Windows paths use native filesystem operations and forward slashes only for ESM 
 
 CI verifies every push. Releases: bump `packages/reui/package.json`, push tag `v<version>`; CI publishes with npm trusted publishing (workflow `publish.yml`, environment `npm`).
 
-### Known upstream dependency issue
-
-The current `@tanstack/react-virtual` 3.14.26 manifest refers to unpublished `@tanstack/virtual-core` 3.19.11. Until a working upstream release is verified, this package uses the range `>=3.14.25 <3.14.26`. The sync scratch project applies the same constraint.
-
 ### Validation status
 
 Local macOS validation: all 82 source modules import successfully; declarations compile; Vite builds an isolated tarball consumer; SSR and registry alias resolution pass. Windows drive-letter, UNC, Unicode and space-containing paths are covered by path regression tests. A native Windows build has not yet been run. Releases are published locally; no CI is required.

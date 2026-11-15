@@ -52,7 +52,7 @@ function tsc(root: string, options: Record<string, unknown>, include: string[]):
           strict: true,
           skipLibCheck: true,
           isolatedModules: true,
-          types: ["node"],
+          types: ["bun"],
           ...options
         },
         include

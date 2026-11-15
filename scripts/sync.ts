@@ -19,7 +19,7 @@ function walk(dir: string): string[] {
 try {
   if (supplied < 0) {
     mkdirSync(join(scratch, "src"))
-    writeFileSync(join(scratch, "package.json"), JSON.stringify({ name: "reui-sync", private: true, type: "module", packageManager: "bun@1.4.4", overrides: { "@tanstack/react-virtual": ">=3.14.25 <3.14.26" } }))
+    writeFileSync(join(scratch, "package.json"), JSON.stringify({ name: "reui-sync", private: true, type: "module", packageManager: "bun@1.4.4" }))
     cpSync(join(root, "registry-config.json"), join(scratch, "components.json"))
     writeFileSync(join(scratch, "tsconfig.json"), JSON.stringify({ compilerOptions: { paths: { "@/*": ["./src/*"] } } }))
     writeFileSync(join(scratch, "src/index.css"), '@import "tailwindcss";\n')
@@ -45,8 +45,6 @@ try {
   rmSync(join(pkg, "src"), { recursive: true, force: true })
   mkdirSync(output, { recursive: true })
   cpSync(source, output, { recursive: true })
-  // 3.14.26 currently requests unpublished virtual-core 3.19.11.
-  if (dependencies["@tanstack/react-virtual"]) dependencies["@tanstack/react-virtual"] = ">=3.14.25 <3.14.26"
   manifest.dependencies = Object.fromEntries(Object.entries(dependencies).sort(([a], [b]) => a.localeCompare(b)))
   writeFileSync(join(pkg, "package.json"), JSON.stringify(manifest, null, 2) + "\n")
   writeFileSync(join(pkg, "registry.json"), JSON.stringify({ upstreamVersion: manifest.version, versionSource: "https://github.com/keenthemes/reui/blob/main/package.json", registry: "https://reui.io/r/{style}/{name}.json", style: "base-vega", cli: "shadcn@4.23.0", items: names, files: Object.fromEntries(files.map(f => [relative(join(scratch, "src"), f).split(sep).join("/"), createHash("sha256").update(readFileSync(f)).digest("hex")])) }, null, 2) + "\n")

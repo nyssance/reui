@@ -14,7 +14,7 @@ try {
   const archive = join(scratch, `nyssance-reui-${manifest.version}.tgz`)
   writeFileSync(join(scratch, "package.json"), JSON.stringify({ name: "reui-consumer", private: true, type: "module", dependencies: {
     "@nyssance/reui": archive, react: "^19.3", "react-dom": "^19.3", vite: "^8.3",
-    typescript: "^7.0", "@types/react": "^19.3", "@types/react-dom": "^19.3", "@types/node": "^24"
+    typescript: "^7.0", "@types/react": "^19.3", "@types/react-dom": "^19.3", "@types/bun": "^1.4"
   } }, null, 2))
   run(["install"], scratch)
   const snapshot = JSON.parse(readFileSync(join(root, "packages/reui/registry.json"), "utf8"))

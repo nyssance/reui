@@ -898,7 +898,7 @@ function beginGesture<TData>(config: BeginGestureConfig<TData>) {
     if (unchanged) return
     // Commit through the one validation funnel; consumer reject = automatic
     // revert because the calendar never mutated during the gesture.
-    const accepted = internals.applyProposedUpdate({
+    const committed = internals.applyProposedUpdate({
       event: occurrence.event,
       occurrence,
       start: drag.proposedStart,
@@ -909,12 +909,13 @@ function beginGesture<TData>(config: BeginGestureConfig<TData>) {
         kind === "move" ? "drag" : (kind as "resize-start" | "resize-end"),
     })
     // the polite live region is the only feedback a screen-reader user gets
-    // that the drop landed, and on what; a vetoed commit stays silent
-    if (accepted && announcer) {
+    // that the drop landed, and on what: the stored dates, which onEventUpdate
+    // may have adjusted; a vetoed commit stays silent
+    if (committed && announcer) {
       announcer.textContent = `${occurrence.event.title}, ${settings.i18n.functions.formatEventTime(
-        toZoned(drag.proposedStart, timeZone),
-        toZoned(drag.proposedEnd, timeZone),
-        drag.proposedAllDay,
+        toZoned(committed.start, timeZone),
+        toZoned(committed.end, timeZone),
+        committed.allDay,
         { locale: settings.locale }
       )}`
     }

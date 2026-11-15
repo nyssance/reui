@@ -277,16 +277,20 @@ interface EventCalendarApi<TData = unknown> {
   scrollToTime(time: Date | number): void
 }
 
+/** The dates a commit wrote, after any onEventUpdate adjustment. */
+type EventCalendarCommittedTiming = { start: Date; end: Date; allDay: boolean }
+
 /** Cross-file plumbing for sibling view/interaction modules; not public API. */
 interface EventCalendarInternals<TData = unknown> {
   getIndex(): EventCalendarIndex<TData>
   setDrag(drag: EventCalendarDragState<TData> | null): void
   setSlotDraft(draft: EventCalendarSlotDraft | null): void
   registerScrollHandler(handler: ((time: Date | number) => void) | null): void
+  /** What it committed, so the drop is announced as stored; null = rejected. */
   applyProposedUpdate(
     update: EventCalendarProposedUpdate<TData>,
     extraPatch?: Partial<CalendarEvent<TData>>
-  ): boolean
+  ): EventCalendarCommittedTiming | null
   getSettingsVersion(): number
   /** The rendered calendar root element, or null before mount. */
   getRootEl(): HTMLElement | null
@@ -567,10 +571,10 @@ function createEventCalendarStore<TData>(
   const applyProposedUpdate = (
     update: EventCalendarProposedUpdate<TData>,
     extraPatch?: Partial<CalendarEvent<TData>>
-  ): boolean => {
+  ): EventCalendarCommittedTiming | null => {
     const result = settings.onEventUpdate?.(update)
-    if (result === false) return false
-    const adjusted: Partial<CalendarEvent<TData>> =
+    if (result === false) return null
+    const timing: EventCalendarCommittedTiming =
       result && typeof result === "object"
         ? {
             start: result.start ?? update.start,
@@ -578,6 +582,7 @@ function createEventCalendarStore<TData>(
             allDay: result.allDay ?? update.allDay,
           }
         : { start: update.start, end: update.end, allDay: update.allDay }
+    const adjusted: Partial<CalendarEvent<TData>> = { ...timing }
     if (update.resourceId !== undefined) adjusted.resourceId = update.resourceId
     // the STORED event holds the pre-commit start, which is what the live
     // occurrence key was built from (update.event already carries the proposal
@@ -598,7 +603,7 @@ function createEventCalendarStore<TData>(
         : event
     )
     setField("events", next)
-    return true
+    return timing
   }
 
   const getIndex = (): EventCalendarIndex<TData> => {

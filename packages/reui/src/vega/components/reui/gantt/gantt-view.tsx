@@ -42,6 +42,7 @@ import {
   resolveOffDay,
   toZoned,
   zonedStartOfDay,
+  type GanttDependencyGeometry,
   type GanttLaneMemo,
 } from "@/components/reui/gantt/gantt-lib"
 import type {
@@ -230,6 +231,29 @@ function laneBlockRem(
 ): number {
   return count * laneHeightRem + (count - 1) * laneGapRem
 }
+
+/**
+ * A row of `count` lanes. Lane 0 keeps the inset it has in a one-lane row
+ * (minRowHeight centres a lone bar, rowPadding is the floor) at every lane
+ * count, so a drop that adds or removes a lane grows or shrinks the row BELOW
+ * and the bars and tree label above it never move. Centring the stack instead
+ * moved them 2px each way. The layout pass and the drag-create draft both
+ * read this, so the row a draft reserves is the row its commit lands on.
+ */
+function rowLayoutRem(
+  count: number,
+  laneHeightRem: number,
+  laneGapRem: number,
+  rowPaddingRem: number,
+  minRowRem: number
+): { laneOffsetRem: number; heightRem: number } {
+  const laneOffsetRem = Math.max((minRowRem - laneHeightRem) / 2, rowPaddingRem)
+  const blockRem = laneBlockRem(count, laneHeightRem, laneGapRem)
+  return {
+    laneOffsetRem,
+    heightRem: Math.max(minRowRem, laneOffsetRem + blockRem + rowPaddingRem),
+  }
+}
 /** Bars narrower than this flip their title outside in barLabel "auto". */
 const AUTO_LABEL_MIN_REM = 7
 const DEFAULT_TREE_PANEL = {
@@ -319,7 +343,7 @@ interface TimelineRowBars {
   /** Mode this row was packed under; the draft overlay must honour it. */
   scheduleMode: "single" | "multiple"
   heightRem: number
-  /** Gap above the first bar; equal to every other gap in the row. */
+  /** Gap above the first bar: the one-lane inset at every lane count. */
   laneOffsetRem: number
   /**
    * The band the FIRST schedule occupies, its gaps included. The tree cell
@@ -1057,13 +1081,13 @@ function GanttView({
         }
       }
 
-      // The stack, then the row's own padding around it. Centering the block
-      // in the resulting height gives an equal inset top and bottom, and it
-      // is also what keeps a lone bar on the tree label's centerline when a
-      // short row is held open by minRowHeight.
-      const blockRem = laneBlockRem(laneCount, laneHeightRem, laneGapRem)
-      const heightRem = Math.max(minRowRem, blockRem + 2 * rowPaddingRem)
-      const laneOffsetRem = (heightRem - blockRem) / 2
+      const { laneOffsetRem, heightRem } = rowLayoutRem(
+        laneCount,
+        laneHeightRem,
+        laneGapRem,
+        rowPaddingRem,
+        minRowRem
+      )
 
       map.set(row.resource.id, {
         segments,
@@ -1136,13 +1160,8 @@ function GanttView({
    * per snapped step would hand every row a new `bars` object and defeat
    * GanttTimelineRow's memo across the entire grid, so only the drafted row's
    * entry is replaced; every other row keeps its identity and never re-renders.
-   *
-   * `laneOffsetRem` and `bandRem` are deliberately carried over UNCHANGED.
-   * Deriving them from the grown track count re-centres the row, which drags
-   * the settled bars and the tree label box with it - a 2px wobble by default
-   * and, under a consumer `metrics.minRowHeight` big enough to swallow the
-   * growth, an 11.5px jerk that snaps back on release. Growing a row must add
-   * space BELOW what is already there and move nothing.
+   * Growth goes through rowLayoutRem like the layout pass, so it adds space
+   * BELOW the settled bars and is exactly the height the commit lands on.
    */
   const rowBars = useMemo(() => {
     if (!draftLayout) return baseRowBars
@@ -1162,17 +1181,26 @@ function GanttView({
       draftLayout.endMs
     )
     const trackCount = Math.max(base.laneCount, draftLane + 1)
-    const draftBlockRem = laneBlockRem(trackCount, laneHeightRem, laneGapRem)
     next.set(draftLayout.resourceId, {
       ...base,
       draftLane,
-      heightRem: Math.max(
-        base.heightRem,
-        base.laneOffsetRem * 2 + draftBlockRem
-      ),
+      heightRem: rowLayoutRem(
+        trackCount,
+        laneHeightRem,
+        laneGapRem,
+        rowPaddingRem,
+        minRowRem
+      ).heightRem,
     })
     return next
-  }, [baseRowBars, draftLayout, laneHeightRem, laneGapRem])
+  }, [
+    baseRowBars,
+    draftLayout,
+    laneHeightRem,
+    laneGapRem,
+    rowPaddingRem,
+    minRowRem,
+  ])
 
   // Dependency arrows: resolve every visible bar's anchors in track
   // coordinates (x rem from the range start, y rem from the rows-block top).
@@ -2941,14 +2969,18 @@ function GanttCustomDragLayer() {
 }
 
 /**
- * The dependency-arrow overlay: one SVG whose user unit is 1rem at the
- * track's natural width (the viewBox mirrors it), stretched to w-full so its
- * mapping tracks the bars' percentage positions when the zoomed track is
- * narrower than the pane. While a gesture is in flight the dragged event's
- * own endpoints re-derive from the proposed range and its edges go dashed -
- * the arrows point at the drop indicator's landing, never at stale data.
- * A component of its own so the per-snap drag subscription re-renders a few
- * paths instead of the whole view.
+ * The dependency-arrow overlay: an SVG whose user unit is 1rem at the track's
+ * natural width (the viewBox mirrors it), stretched to w-full so its mapping
+ * tracks the bars' percentage positions when the zoomed track is narrower
+ * than the pane. Links into one task are drawn as one bundle (shared trunk
+ * and arrowhead). A broken link, whose successor starts before its
+ * predecessor ends, leaves its bundle for a second SVG above the bars, where
+ * its back-run can no longer hide under one: dashed, destructive and marked
+ * `data-violated`. While a gesture is in flight the dragged event's own
+ * endpoints re-derive from the proposed range and their links drop to half
+ * tone - the arrows point at the drop indicator's landing, never at stale
+ * data. A component of its own so the per-snap drag subscription re-renders
+ * a few paths instead of the whole view.
  */
 const GanttDependencyLayer = memo(function GanttDependencyLayer({
   edges,
@@ -2998,72 +3030,134 @@ const GanttDependencyLayer = memo(function GanttDependencyLayer({
   const liveX = (ms: number) =>
     (Math.min(Math.max((ms - rangeStartMs) / 60000, 0), totalMin) / totalMin) *
     trackRemWidth
-  return (
-    <svg
-      aria-hidden
-      data-slot="gantt-dependencies"
-      // w-full, NOT the track's rem width: rows fill the pane when the
-      // zoomed track is narrower (min-w-full), and bars position as a
-      // percentage of that STRETCHED box - so the viewBox mapping must
-      // stretch with them or every arrow drifts off its bar. The
-      // non-uniform scale is neutralized on strokes below; arrowheads
-      // lengthen slightly with the fill, which tracks the bars.
-      className={cn(
-        "text-muted-foreground/70 pointer-events-none absolute start-0 top-0 w-full overflow-visible rtl:-scale-x-100",
-        viewConfig.classNames?.dependencies
-      )}
-      style={{ height: `${totalRem}rem` }}
-      viewBox={`0 0 ${trackRemWidth} ${totalRem}`}
-      preserveAspectRatio="none"
+  const route = {
+    clearance: 0.625,
+    // the loop route hops just past the lane edge
+    laneStep: laneHeightRem / 2 + laneGapRem,
+    arrowSize: 0.375,
+  }
+  // one bundle per target, keyed by its id: shared trunk and arrowhead
+  const bundles = new Map<
+    string,
+    {
+      to: { x: number; y: number }
+      from: { x: number; y: number }[]
+      dragged: boolean
+    }
+  >()
+  const broken: Array<{
+    key: string
+    dragged: boolean
+    geometry: GanttDependencyGeometry
+  }> = []
+  for (const edge of edges) {
+    // y never moves: a gesture stays on its own row and lane
+    const fromDragged = dragLink !== null && edge.fromId === dragLink.eventId
+    const toDragged = dragLink !== null && edge.toId === dragLink.eventId
+    const from = {
+      x: fromDragged ? liveX(dragLink.endMs) : edge.fromX,
+      y: edge.fromY,
+    }
+    const to = {
+      x: toDragged ? liveX(dragLink.startMs) : edge.toX,
+      y: edge.toY,
+    }
+    if (from.x > to.x) {
+      broken.push({
+        key: edge.key,
+        dragged: fromDragged || toDragged,
+        geometry: buildDependencyPath(from, to, route),
+      })
+      continue
+    }
+    const bundle = bundles.get(edge.toId)
+    if (bundle) {
+      bundle.from.push(from)
+      bundle.dragged ||= fromDragged || toDragged
+    } else {
+      bundles.set(edge.toId, {
+        to,
+        from: [from],
+        dragged: fromDragged || toDragged,
+      })
+    }
+  }
+  const renderLink = (
+    key: string,
+    geometry: GanttDependencyGeometry,
+    dragged: boolean,
+    violated: boolean
+  ) => (
+    <g
+      key={key}
+      data-slot="gantt-dependency"
+      data-dragging={dragged || undefined}
+      data-violated={violated || undefined}
+      // in-flight links stay solid - they still describe a real link - and
+      // drop to a lower tone, arrowhead included, while an endpoint is
+      // provisional. The broken tone is a plain class, so any
+      // `[data-violated]` rule in classNames.dependencies outranks it.
+      className={cn(violated && "text-destructive", dragged && "opacity-50")}
     >
-      {edges.map((edge) => {
-        // y never moves: a gesture stays on its own row and lane
-        const dragged =
-          dragLink !== null &&
-          (edge.fromId === dragLink.eventId || edge.toId === dragLink.eventId)
-        const fromX =
-          dragged && edge.fromId === dragLink.eventId
-            ? liveX(dragLink.endMs)
-            : edge.fromX
-        const toX =
-          dragged && edge.toId === dragLink.eventId
-            ? liveX(dragLink.startMs)
-            : edge.toX
-        const geometry = buildDependencyPath(
-          { x: fromX, y: edge.fromY },
-          { x: toX, y: edge.toY },
-          {
-            clearance: 0.625,
-            // the loop route hops just past the lane edge
-            laneStep: laneHeightRem / 2 + laneGapRem,
-            arrowSize: 0.375,
-          }
-        )
-        return (
-          <g
-            key={edge.key}
-            data-slot="gantt-dependency"
-            data-dragging={dragged || undefined}
-            // in-flight edges stay SOLID - they still describe a real link -
-            // and drop to a lower tone, arrowhead included, while the
-            // endpoint is provisional
-            className={dragged ? "opacity-50" : undefined}
-          >
-            <path
-              d={geometry.line}
-              fill="none"
-              stroke="currentColor"
-              // screen-space px via non-scaling-stroke, matching the
-              // view's 1px gridlines; a viewBox-unit width would fatten
-              // vertical runs whenever the track stretches
-              strokeWidth={1.5}
-              vectorEffect="non-scaling-stroke"
-            />
-            <path d={geometry.arrow} fill="currentColor" />
-          </g>
-        )
-      })}
-    </svg>
+      <path
+        d={geometry.line}
+        fill="none"
+        stroke="currentColor"
+        // screen-space px via non-scaling-stroke, matching the view's 1px
+        // gridlines; a viewBox-unit width would fatten vertical runs
+        // whenever the track stretches
+        strokeWidth={1.5}
+        strokeDasharray={violated ? "4 3" : undefined}
+        vectorEffect="non-scaling-stroke"
+      />
+      <path d={geometry.arrow} fill="currentColor" />
+    </g>
+  )
+  const layerProps = {
+    "aria-hidden": true,
+    "data-slot": "gantt-dependencies",
+    style: { height: `${totalRem}rem` },
+    viewBox: `0 0 ${trackRemWidth} ${totalRem}`,
+    preserveAspectRatio: "none",
+  }
+  // w-full, NOT the track's rem width: rows fill the pane when the zoomed
+  // track is narrower (min-w-full), and bars position as a percentage of that
+  // STRETCHED box - so the viewBox mapping must stretch with them or every
+  // arrow drifts off its bar. The non-uniform scale is neutralized on
+  // strokes; arrowheads lengthen slightly with the fill, which tracks the bars.
+  const layerClassName =
+    "text-muted-foreground/70 pointer-events-none absolute start-0 top-0 w-full overflow-visible rtl:-scale-x-100"
+  return (
+    <>
+      <svg
+        {...layerProps}
+        className={cn(layerClassName, viewConfig.classNames?.dependencies)}
+      >
+        {[...bundles].map(([toId, bundle]) =>
+          renderLink(
+            toId,
+            buildDependencyPath(bundle.from, bundle.to, route),
+            bundle.dragged,
+            false
+          )
+        )}
+      </svg>
+      {broken.length > 0 && (
+        // z-20: over every bar (10 + lane) yet under the sticky header (z-30)
+        <svg
+          {...layerProps}
+          className={cn(
+            layerClassName,
+            "z-20",
+            viewConfig.classNames?.dependencies
+          )}
+        >
+          {broken.map((link) =>
+            renderLink(link.key, link.geometry, link.dragged, true)
+          )}
+        </svg>
+      )}
+    </>
   )
 })
 

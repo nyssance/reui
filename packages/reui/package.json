@@ -1,6 +1,6 @@
 {
   "name": "@nyssance/reui",
-  "version": "2.8.1",
+  "version": "2.8.2",
   "description": "MIT ReUI Base UI Vega primitives, packaged as ESM with TypeScript declarations.",
   "type": "module",
   "license": "MIT",
@@ -33,8 +33,8 @@
     }
   },
   "peerDependencies": {
-    "react": "^19.3",
-    "react-dom": "^19.3",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
     "vite": ">=8"
   },
   "peerDependenciesMeta": {

@@ -94,6 +94,14 @@ interface GanttCallbacks<TData = unknown> {
     occurrence: GanttOccurrence<TData>,
     e: React.MouseEvent
   ) => void
+  /**
+   * Commit gate for every timing change: false rejects, an object adjusts. A
+   * drag or resize calls it once per committed gesture, on release, however
+   * many dates the pointer crossed: never during the drag (that is
+   * canDropEvent), and not at all for Esc, a window blur, a drop back on the
+   * start, an overlap "reject" or a failed enforceCanDrop. `updateEvent`
+   * calls it once per timing patch, as source "api".
+   */
   onEventUpdate?: (update: GanttProposedUpdate<TData>) => GanttUpdateResult
   canDropEvent?: (update: GanttProposedUpdate<TData>) => boolean
   onSlotClick?: (slot: GanttSlotInfo, e: React.MouseEvent) => void
@@ -242,12 +250,18 @@ interface GanttApi<TData = unknown> {
   toZoned(date: Date): Date
 }
 
+/** The dates a commit wrote, after any onEventUpdate adjustment. */
+type GanttCommittedTiming = { start: Date; end: Date; allDay: boolean }
+
 /** Cross-file plumbing for sibling view/interaction modules; not public API. */
 interface GanttInternals<TData = unknown> {
   getIndex(): GanttIndex<TData>
   setDrag(drag: GanttDragState<TData> | null): void
   setSlotDraft(draft: GanttSlotDraft | null): void
-  applyProposedUpdate(update: GanttProposedUpdate<TData>): boolean
+  /** What it committed, so the drop is announced as stored; null = rejected. */
+  applyProposedUpdate(
+    update: GanttProposedUpdate<TData>
+  ): GanttCommittedTiming | null
   getSettingsVersion(): number
   /**
    * Grow visibleRange by whole periods for infinite scrolling; resets on
@@ -490,10 +504,10 @@ function createGanttStore<TData>(
     // setField pass would read stale controlled options.events and emit an
     // array without the timing change
     extra?: Partial<GanttEvent<TData>>
-  ): boolean => {
+  ): GanttCommittedTiming | null => {
     const result = settings.onEventUpdate?.(update)
-    if (result === false) return false
-    const adjusted: Partial<GanttEvent<TData>> =
+    if (result === false) return null
+    const timing: GanttCommittedTiming =
       result && typeof result === "object"
         ? {
             start: result.start ?? update.start,
@@ -501,6 +515,7 @@ function createGanttStore<TData>(
             allDay: result.allDay ?? update.allDay,
           }
         : { start: update.start, end: update.end, allDay: update.allDay }
+    const adjusted: Partial<GanttEvent<TData>> = { ...timing }
     if (update.resourceId !== undefined) adjusted.resourceId = update.resourceId
     const merged = extra ? { ...extra, ...adjusted } : adjusted
     const events = getState().events
@@ -508,7 +523,7 @@ function createGanttStore<TData>(
       event.id === update.event.id ? { ...event, ...merged } : event
     )
     setField("events", next)
-    return true
+    return timing
   }
 
   const getIndex = (): GanttIndex<TData> => {

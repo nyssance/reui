@@ -1,4 +1,6 @@
 {
+  "upstreamVersion": "2.8.1",
+  "versionSource": "https://github.com/keenthemes/reui/blob/main/package.json",
   "registry": "https://reui.io/r/{style}/{name}.json",
   "style": "base-vega",
   "cli": "shadcn@4.23.0",
@@ -107,9 +109,9 @@
     "components/reui/code-block/code-block.tsx": "aa21a8368dc0cb2bd747480a078dc610711b6143bde7c7ea8f76e609dbdcf708",
     "components/reui/event-calendar/event-calendar-month-view.tsx": "ba2814a4ab0a7fb705f114b28b2c372078d03348dda8c60aee0e05150c5a655b",
     "components/reui/event-calendar/event-calendar-resource-view.tsx": "7dd2b5fe44a058307b7440e2ac1669163f1d99af4533a6917f882ac4da847ff4",
-    "components/reui/event-calendar/event-calendar.tsx": "be9f4643323db6ab7ff995eabedf13354937e4178395260d0e0b1fedc0b04f57",
+    "components/reui/event-calendar/event-calendar.tsx": "57259c0cec0653caaf62d519a9637a5005c05a38a9a238cfe321f618c4d32128",
     "components/reui/event-calendar/event-calendar-i18n.tsx": "fa286963cc299e0454422569cc3ac6e4775942319870eb2ce5a9316f8a83c343",
-    "components/reui/event-calendar/event-calendar-dnd.tsx": "70ac539f4b31d7810bd78611f12b9f023f87dc3e2aab598f7001ec7562705c1a",
+    "components/reui/event-calendar/event-calendar-dnd.tsx": "81406ef89d3014dfa68c06d6781729acaf128f94bde1b890711f300ad46821b2",
     "components/reui/event-calendar/event-calendar-nav.tsx": "d13337d3e2375f420abfebb4528107492a92d41a19d511748f1b91e402e86595",
     "components/reui/event-calendar/event-calendar-event.tsx": "9842dc3629fb0160eeedeabc72d542ed47794044ffe8be2b33e30e8b9b305eb6",
     "components/reui/event-calendar/event-calendar-agenda-view.tsx": "56f17b8b664be8ff2df44597a163036df7bc1c651edc5f245137ed9982d5d00a",
@@ -137,13 +139,13 @@
     "components/reui/timeline.tsx": "c0a02a2ba19882e8c71fce6ab15ef3a0587a4179884abbd492a18a5209a10f83",
     "components/reui/tree.tsx": "960ba74881fbb44a362a83fd2a1269678097384fc4f9f9204ab0923497c3f382",
     "components/reui/gantt/gantt-bar.tsx": "62db43dacf17f7a66a023f1a88b334ecb7ad05bbc61554dcdb49d948ba537943",
-    "components/reui/gantt/gantt-types.tsx": "457f9a3b13fed0e8c3c0ee5f66e54788e813827aab4f53aa011d97bde4edaa78",
-    "components/reui/gantt/gantt-lib.tsx": "ea634f4c433ea7f70ac8b1bb0a6a36bd4e8bc838e7584f907cfc21b00665274c",
+    "components/reui/gantt/gantt-types.tsx": "ae904be013ed4fcdee9072288c6c115535d31d9506e13d2268f59a3888a622cc",
+    "components/reui/gantt/gantt-lib.tsx": "07bced5aaff8d1ac8fe0137f239bb5a24ef33210a00a68ca8bb112fcc6b6e059",
     "components/reui/gantt/gantt-recurrence.tsx": "8165f50e25253aaa8251296ed44b1d8877ae863eca691d03071cd18dafc7caba",
-    "components/reui/gantt/gantt-view.tsx": "743e17dfc76668ca00db57d91b435f8711ec8d71b24e569428b0c58a74c5935b",
+    "components/reui/gantt/gantt-view.tsx": "d16ec17653601c309d8d7286aa187f0294703ad688cb15f5890d185e6fb58eba",
     "components/reui/gantt/gantt-i18n.tsx": "450461faf813e63f3702e05c27b1d276e47a551261e9cb9153a3b3729ad3a207",
-    "components/reui/gantt/gantt.tsx": "b9c6a15a255ee93c04d3c7460633d3e415c8c6781fcdffbd3119cdc6409c5d9a",
-    "components/reui/gantt/gantt-dnd.tsx": "fbaad6920c8df963c33e2528f2180e1afb6b7ff6ffc1e5a13e9b7a14d266a222",
+    "components/reui/gantt/gantt.tsx": "833303ddbf543e1583ecf83254fd99e48bcb5caf951c2caaddabd7b0fc0b92a3",
+    "components/reui/gantt/gantt-dnd.tsx": "e4703b65ade1e3854a2be66f99bd9523263ba7cb976beb8483c9ea6265f4fe3a",
     "components/reui/gantt/gantt-nav.tsx": "668ea2d83a0f221caa439b42ce378f5cf2d8e8ce26539c54bbcafb43b761e7e0",
     "components/reui/file-type.tsx": "0feaa896c01b4d6bd3e9edc32699cbd1b37331a3a4b0bfcca600c4fdfb75a02d",
     "components/reui/badge.tsx": "fb04a4c44ffbfe9ddca5db1d3b3013b4e78bcfc6ad44054a78c213d6bd8a70d7",
@@ -169,7 +171,5 @@
     "components/reui/data-grid/data-grid-table-virtual.tsx": "89b56b543950a3ed29c464a9ff357d92ae2b3e2d5067dd461f05ee5bf21a1223",
     "components/reui/data-grid/data-grid.tsx": "d13f3385332d245871dd97a8abda3e6c27f439989eefd20d880e217cae0e01f9",
     "components/reui/sortable.tsx": "9ef56f725faa689f3c03f4e4acee2ef851363cee803cc9724e15e793e4a56a9c"
-  },
-  "upstreamVersion": "2.8.1",
-  "versionSource": "https://github.com/keenthemes/reui/blob/main/package.json"
+  }
 }

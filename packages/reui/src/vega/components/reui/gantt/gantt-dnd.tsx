@@ -851,7 +851,7 @@ function beginGesture<TData>(config: BeginGestureConfig<TData>) {
     if (unchanged) return
     // Commit through the one validation funnel; consumer reject = automatic
     // revert because the gantt never mutated during the gesture.
-    const accepted = internals.applyProposedUpdate({
+    const committed = internals.applyProposedUpdate({
       event: occurrence.event,
       occurrence,
       start: drag.proposedStart,
@@ -861,11 +861,12 @@ function beginGesture<TData>(config: BeginGestureConfig<TData>) {
       source:
         kind === "move" ? "drag" : (kind as "resize-start" | "resize-end"),
     })
-    if (accepted && announcer) {
+    // the stored dates, not the drop: onEventUpdate may have adjusted them
+    if (committed && announcer) {
       announcer.textContent = `${occurrence.event.title}, ${settings.i18n.functions.formatEventTime(
-        toZoned(drag.proposedStart, settings.timeZone),
-        toZoned(drag.proposedEnd, settings.timeZone),
-        drag.proposedAllDay,
+        toZoned(committed.start, settings.timeZone),
+        toZoned(committed.end, settings.timeZone),
+        committed.allDay,
         settings.locale
       )}`
     }

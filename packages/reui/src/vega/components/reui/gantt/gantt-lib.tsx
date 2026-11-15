@@ -199,13 +199,22 @@ interface GanttDependencyGeometry {
   arrow: string
 }
 
+type GanttDependencyPoint = { x: number; y: number }
+
 /**
- * Finish-to-start connector geometry from a predecessor's END anchor to a
- * successor's START anchor, in whatever units the caller works in (the view
- * passes rem). A target with room ahead takes the classic Z route: out by
- * `clearance`, across to the target lane, in. A target at or behind the
- * source's exit loops instead: out, hop `laneStep` toward the target's side
- * (down when level - below reads as "later"), back past the target, in.
+ * Finish-to-start connector geometry from one or more predecessors' END
+ * anchors into a successor's START anchor, in whatever units the caller works
+ * in (the view passes rem). A source with room ahead takes the classic Z: out
+ * to the trunk, along it to the target lane, in. A near target shrinks the
+ * exit stub down to `minStub` before giving up on the elbow; only a source
+ * with less room than that (touching, overlapping, backward) loops: out, hop
+ * `laneStep` toward the target's side (down when level - below reads as
+ * "later"), back to the trunk, in. Several sources share ONE trunk, entry and
+ * arrowhead, so the links into a task read as a bundle rather than as
+ * parallel verticals that seem to start at whichever bar they pass. The trunk
+ * sits one `clearance` past the latest source with room, or where a loop
+ * re-enters (one `clearance` before the target) when that is later: a loop
+ * pulled back to an early trunk would run its back-run under its own bar.
  * The line stops `arrowSize` short of the anchor so it never pokes through
  * the head. The exit stub can sit under an outside-after bar label; a
  * consumer that shows those widens the label's start margin instead of the
@@ -213,24 +222,45 @@ interface GanttDependencyGeometry {
  * everywhere else).
  */
 function buildDependencyPath(
-  from: { x: number; y: number },
-  to: { x: number; y: number },
-  opts: { clearance: number; laneStep: number; arrowSize: number }
+  from: GanttDependencyPoint | readonly GanttDependencyPoint[],
+  to: GanttDependencyPoint,
+  opts: {
+    clearance: number
+    laneStep: number
+    arrowSize: number
+    /**
+     * Shortest exit stub an elbow may take; a quarter of the head by default.
+     * At the view's 6px head that is 1.5px, one stroke: with the bar's 1px
+     * inset the corner still clears the bar's end, where anything shorter
+     * reads as the bar's own edge, and a 3-day gap at Year zoom-out (1.9px of
+     * room) keeps its elbow instead of jogging back 12px.
+     */
+    minStub?: number
+  }
 ): GanttDependencyGeometry {
   const { clearance, laneStep, arrowSize } = opts
+  const minStub = opts.minStub ?? arrowSize / 4
+  const sources = "x" in from ? [from] : from
   const lineEndX = to.x - arrowSize
   const arrow = `M ${to.x} ${to.y} L ${lineEndX} ${to.y - arrowSize * 0.6} L ${lineEndX} ${to.y + arrowSize * 0.6} Z`
-  if (lineEndX >= from.x + clearance) {
-    return {
-      line: `M ${from.x} ${from.y} H ${from.x + clearance} V ${to.y} H ${lineEndX}`,
-      arrow,
-    }
-  }
-  const midY = to.y >= from.y ? from.y + laneStep : from.y - laneStep
-  return {
-    line: `M ${from.x} ${from.y} H ${from.x + clearance} V ${midY} H ${to.x - clearance} V ${to.y} H ${lineEndX}`,
-    arrow,
-  }
+  const fits = (source: GanttDependencyPoint) => lineEndX - source.x >= minStub
+  // -Infinity when nothing fits, so the loop's re-entry below takes over
+  const latest = Math.max(...sources.filter(fits).map((source) => source.x))
+  const trunkX = sources.every(fits)
+    ? Math.min(latest + clearance, lineEndX)
+    : Math.max(Math.min(latest + clearance, lineEndX), to.x - clearance)
+  // One path, one subpath per source: the stroke of a single path is painted
+  // once, so the shared trunk never darkens where the subpaths overlap.
+  const line = sources
+    .map((source) => {
+      if (fits(source)) {
+        return `M ${source.x} ${source.y} H ${trunkX} V ${to.y} H ${lineEndX}`
+      }
+      const midY = to.y >= source.y ? source.y + laneStep : source.y - laneStep
+      return `M ${source.x} ${source.y} H ${source.x + clearance} V ${midY} H ${trunkX} V ${to.y} H ${lineEndX}`
+    })
+    .join(" ")
+  return { line, arrow }
 }
 
 /** Actual end against the planned end; null when no valid baseline exists. */

@@ -208,6 +208,13 @@ interface GanttRangeInfo {
 }
 
 interface GanttProposedUpdate<TData = unknown> {
+  /**
+   * The event as it was before this change: a drag or resize hands over the
+   * stored event from when the gesture began, so putting its start, end and
+   * resourceId back undoes the commit (a recurring instance's own times are
+   * on `occurrence`). `updateEvent` (source "api") passes it with the patch
+   * already merged.
+   */
   event: GanttEvent<TData>
   /** null when source === "api". */
   occurrence: GanttOccurrence<TData> | null

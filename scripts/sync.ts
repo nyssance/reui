@@ -3,6 +3,7 @@ import { cpSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writ
 import { tmpdir } from "node:os"
 import { join, resolve, relative, sep, basename } from "node:path"
 import { createHash } from "node:crypto"
+import { keepHigher } from "./ranges"
 
 const root = resolve(import.meta.dirname, "..")
 const pkg = join(root, "packages/reui")
@@ -45,7 +46,9 @@ try {
   rmSync(join(pkg, "src"), { recursive: true, force: true })
   mkdirSync(output, { recursive: true })
   cpSync(source, output, { recursive: true })
-  manifest.dependencies = Object.fromEntries(Object.entries(dependencies).sort(([a], [b]) => a.localeCompare(b)))
+  manifest.dependencies = Object.fromEntries(
+    Object.entries(keepHigher(dependencies, manifest.dependencies)).sort(([a], [b]) => a.localeCompare(b))
+  )
   writeFileSync(join(pkg, "package.json"), JSON.stringify(manifest, null, 2) + "\n")
   writeFileSync(join(pkg, "registry.json"), JSON.stringify({ upstreamVersion: manifest.version, versionSource: "https://github.com/keenthemes/reui/blob/main/package.json", registry: "https://reui.io/r/{style}/{name}.json", style: "base-vega", cli: "shadcn@4.23.0", items: names, files: Object.fromEntries(files.map(f => [relative(join(scratch, "src"), f).split(sep).join("/"), createHash("sha256").update(readFileSync(f)).digest("hex")])) }, null, 2) + "\n")
   console.log(`Synced ${names.length} registry entries, ${files.length} source files.`)
